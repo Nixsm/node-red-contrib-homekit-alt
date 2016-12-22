@@ -1,0 +1,129 @@
+<!--
+  Copyright 2016 Michael Jacobsen / Marius Schmeding.
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<script type="text/x-red" data-template-name="homekit-thermostat">
+    <div class="form-row">
+        <label for="node-input-accessory">
+        <i class="fa fa-rocket"></i>
+        Accessory</label>
+        <input id="node-input-accessory">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+
+    <div class="form-row">
+        <b>Default values</b>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-targettemperature"><i class="fa fa-cog"></i> TargetTemperature</label>
+        <input type="text" id="node-input-targettemperature" placeholder="-1">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-targetheatingcoolingstate"><i class="fa fa-cog"></i> TargetHeatingCoolingState</span></label>
+        <select id="node-input-targetheatingcoolingstate">
+            <option value="-1">Do not set default value (-1)</option>
+            <option value="0">Off (0)</option>
+            <option value="1">Heat (1)</option>
+            <option value="2">Cool (2)</option>
+            <option value="3">Auto (3)</option>
+        </select>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-coolingthresholdtemperature"><i class="fa fa-cog"></i> CoolingThresholdTemperature</label>
+        <input type="text" id="node-input-coolingthresholdtemperature" placeholder="-1">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-heatingthresholdtemperature"><i class="fa fa-cog"></i> HeatingThresholdTemperature</label>
+        <input type="text" id="node-input-heatingthresholdtemperature" placeholder="-1">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-targetrelativehumidity"><i class="fa fa-cog"></i> TargetRelativeHumidity</label>
+        <input type="text" id="node-input-targetrelativehumidity" placeholder="-1">
+    </div>
+
+    <div class="form-tips">
+        <b>Input</b><br/>
+        <code>msg.topic</code> must be one of these:<br/>
+        <i><nbsp>currentHeatingcoolingstate</i> (UInt8)<br/>
+        <i><nbsp>targetheatingcoolingstate</i> (UInt8)<br/>
+        <i><nbsp>currenttemperature</i> (Float)<br/>
+        <i><nbsp>targettemperature</i> (Float)<br/>
+        <i><nbsp>currentrelativehumidity</i> (Float)<br/>
+        <i><nbsp>targetrelativehumidity</i> (Float)<br/>
+        <i><nbsp>coolingthresholdtemperature</i> (Float)<br/>
+        <i><nbsp>heatingthresholdtemperature</i> (Float)<br/>
+        <br/>
+        <b>Outputs</b><br/>
+        <code>1:</code> TargetHeatingCoolingState<br/>
+        <code>2:</code> TargetTemperature<br/>
+        <code>3:</code> TargetRelativeHumidity<br/>
+        <code>4:</code> CoolingThresholdTemperature<br/>
+        <code>5:</code> HeatingThresholdTemperature<br/>
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('homekit-thermostat', {
+        category: 'homekit-function',
+        paletteLabel: 'Thermostat',
+        defaults: {
+            accessory: {
+                value: "",
+                type: "homekit-accessory",
+                required: true
+            },
+            name: {
+                value: ""
+            },
+            serviceName: {
+                value: "Thermostat",
+                required: true
+            },
+            targettemperature: {
+                value: -1
+            },
+            targetheatingcoolingstate: {
+                value: -1
+            },
+            coolingthresholdtemperature: {
+                value: -1
+            },
+            heatingthresholdtemperature: {
+                value: -1
+            },
+            targetrelativehumidity: {
+                value: -1
+            }
+        },
+        inputs: 1,
+        outputs: 5,
+        icon: "homekit.png",
+        color: "#fcc127",
+        label: function() {
+            return this.name || "Thermostat";
+        },
+        labelStyle: function() {
+            return this.name ? "node_label_italic" : ""
+        }
+    })
+</script>

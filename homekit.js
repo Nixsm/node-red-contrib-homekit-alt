@@ -1,88 +1,112 @@
 module.exports = function (RED) {
-  'use strict'
-  var API = require('./lib/api.js')(RED)
-  var HapNodeJS = require('hap-nodejs')
-  var Accessory = HapNodeJS.Accessory
-  var Service = HapNodeJS.Service
-  var Characteristic = HapNodeJS.Characteristic
-  var uuid = HapNodeJS.uuid
+    'use strict'
+    var API = require('./lib/api.js')(RED)
+    var HapNodeJS = require('hap-nodejs')
+    var Accessory = HapNodeJS.Accessory
+    var Service = HapNodeJS.Service
+    var Characteristic = HapNodeJS.Characteristic
+    var uuid = HapNodeJS.uuid
 
     // Initialize our storage system
-  if (RED.settings.available()) {
-    var userDir = RED.settings.userDir
-    console.log("userDir =", userDir)
-    //RED.log("sss")
-    HapNodeJS.init(userDir + '/homekit-persist')
-  } else {
-    HapNodeJS.init()
-    console.log("just init()")
-    //RED.log("xxx")
-  }
+    if (RED.settings.available()) {
+      var userDir = RED.settings.userDir
 
-  // Initialize API
-  API.init()
-
-  var AccessoryNames = {}
-
-  //
-  //
-  function accessoryNameUsed(name) {
-    var nameNotExist = AccessoryNames[name] === undefined
-
-    if (nameNotExist) {
-      AccessoryNames[name] = true
-      return false
+      HapNodeJS.init(userDir + '/homekit-persist')
+    } else {
+      HapNodeJS.init()
     }
 
-    return true
-  }
+    // Initialize API
+    API.init()
 
-  function HAPAccessoryNode (n) {
-    RED.nodes.createNode(this, n)
+    var AccessoryNames = []
 
-    console.log("HAPAccessoryNode() n = ", n)
+    //
+    //
+    function accessoryNameUsed(name, id) {
+        var nameNotExist = AccessoryNames[name] === undefined
 
-    // config node properties
-    this.name = n.accessoryName
-    this.pinCode = n.pinCode
-    this.port = n.port
-    this.manufacturer = n.manufacturer
-    this.serialNo = n.serialNo
-    this.model = n.model
+        if (nameNotExist) {
+            AccessoryNames[name] = id
+            return false
+        }
 
-    if (accessoryNameUsed(this.name)) {
-      console.log("HAPAccessoryNode() Accessory name already in use! this.name =", this.name)
-      this.name = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5)
+        //console.log("accessoryNameUsed(): already exists!")
+
+        return true
     }
-    /*if (this.name == "221590db-a00b-4793-a924-2b260fafb8ab") {
-      this.name = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5)
-      console.log("HAPAccessoryNode() this.name = ", this.name)
-    }*/
-    try {
-    // generate UUID and username (MAC-address) from node id
-    var accessoryUUID = uuid.generate(this.id)
-    var accessoryUsername = macify(this.id)
+    //
+    //
+    function accessoryRemoveName(name, id) {
+        var nameNotExist = AccessoryNames[name] === undefined
 
-    // create accessory object
-    var accessory = new Accessory(this.name, accessoryUUID)
-    accessory.getService(Service.AccessoryInformation)
-      .setCharacteristic(Characteristic.Manufacturer, this.manufacturer)
-      .setCharacteristic(Characteristic.SerialNumber, this.serialNo)
-      .setCharacteristic(Characteristic.Model, this.model)
+        if (nameNotExist) {
+            console.log("accessoryRemoveName(): not exists")
+        } else if(AccessoryNames[name] == id) {
+            delete AccessoryNames[name]
+        } else {
+            console.log("accessoryRemoveName(): exists but id mismatch")
+            delete AccessoryNames[name]
+        }
 
-    // publish accessory
-    accessory.publish({
-      username: accessoryUsername,
-      pincode: this.pinCode,
-      port: this.port || 0
-    }, true)
-
-    this.accessory = accessory
-    } catch(err) {
-    console.log("HAPAccessoryNode() err = ", err)
+        if (Object.keys(AccessoryNames).length == 0) {
+            //console.log("accessoryRemoveName(): no more elements")
+        }
     }
-  }
-  RED.nodes.registerType('homekit-accessory', HAPAccessoryNode)
+
+    function HAPAccessoryNode (n) {
+      RED.nodes.createNode(this, n)
+
+      RED.log.debug("HAPAccessoryNode(): n = ", n)
+
+      // config node properties
+      this.name         = n.accessoryName
+      this.pinCode      = n.pinCode
+      this.port         = n.port
+      this.manufacturer = n.manufacturer
+      this.serialNo     = n.serialNo
+      this.model        = n.model
+
+      var node   = this
+
+      if (accessoryNameUsed(this.name, this.id)) {
+          RED.log.error("HAPAccessoryNode() Accessory name already in use! this.name =", this.name)
+          this.name = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5)
+      }
+
+      try {
+          // generate UUID and username (MAC-address) from node id
+          var accessoryUUID     = uuid.generate(this.id)
+          var accessoryUsername = macify(this.id)
+
+          // create accessory object
+          var accessory = new Accessory(this.name, accessoryUUID)
+          accessory.getService(Service.AccessoryInformation)
+              .setCharacteristic(Characteristic.Manufacturer, this.manufacturer)
+              .setCharacteristic(Characteristic.SerialNumber, this.serialNo)
+              .setCharacteristic(Characteristic.Model,        this.model)
+
+          // publish accessory
+          accessory.publish({
+              username: accessoryUsername,
+              pincode:  this.pinCode,
+              port:     this.port || 0
+          }, true)
+
+          this.accessory = accessory
+      } catch(err) {
+          console.log("HAPAccessoryNode() err = ", err)
+      }
+
+      this.on('close', function () {
+          //console.log("HAPAccessoryNode(): on 'close'")
+          accessoryRemoveName(node.name, node.id)
+          
+          node.accessory.destroy()
+      })
+    }
+
+    RED.nodes.registerType('homekit-accessory', HAPAccessoryNode)
 
   function HAPServiceNode (n) {
     RED.nodes.createNode(this, n)

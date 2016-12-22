@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-homekit-alt",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Node-RED nodes to simulate Apple HomeKit devices",
   "main": "homekit.js",
   "scripts": {},
@@ -23,7 +23,9 @@
       "motionsensor": "motionsensor.js",
       "occupancysensor": "occupancysensor.js",
       "temperaturesensor": "temperaturesensor.js",
-      "humiditysensor": "humiditysensor.js"
+      "humiditysensor": "humiditysensor.js",
+      "thermostat": "thermostat.js",
+      "smokesensor": "smokesensor.js"
     }
   },
   "author": "Marius Schmeding / Michael Jacobsen",
